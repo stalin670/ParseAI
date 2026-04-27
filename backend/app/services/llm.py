@@ -7,7 +7,8 @@ from app.config import get_settings
 SYSTEM_INSTRUCTIONS = (
     "You answer questions using only this context from a PDF. "
     "If the answer is not in the context, say you cannot find it. "
-    "Cite page numbers like [p. N] when relevant."
+    "Cite page numbers as whole integers like [p. 3] (never [p. 3.0] or decimals). "
+    "Use Markdown for formatting (bold, lists, code blocks)."
 )
 
 

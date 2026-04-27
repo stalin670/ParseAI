@@ -55,7 +55,7 @@ class VectorStore:
             out.append(
                 {
                     "chunk_text": md.get("chunk_text", ""),
-                    "page": md.get("page", 0),
+                    "page": int(md.get("page", 0)),
                     "score": m.get("score", 0.0),
                 }
             )
