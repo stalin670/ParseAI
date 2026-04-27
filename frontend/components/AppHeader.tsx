@@ -27,7 +27,7 @@ export default function AppHeader() {
           </Show>
           <ThemeToggle />
           <Show when="signed-in">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </Show>
           <Show when="signed-out">
             <Button asChild variant="ghost" size="sm">
