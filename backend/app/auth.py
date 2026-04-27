@@ -1,3 +1,4 @@
+import time
 from typing import Any
 
 import httpx
@@ -6,17 +7,23 @@ from jose import JWTError, jwt
 
 from app.config import get_settings
 
+# Cache JWKS with TTL so Clerk key rotation doesn't break auth until a restart.
+_JWKS_TTL_SECONDS = 300
 _jwks_cache: dict[str, Any] = {}
+_jwks_fetched_at: float = 0.0
 
 
 async def _fetch_jwks() -> dict[str, Any]:
-    if "keys" in _jwks_cache:
+    global _jwks_fetched_at
+    if "keys" in _jwks_cache and (time.monotonic() - _jwks_fetched_at) < _JWKS_TTL_SECONDS:
         return _jwks_cache
     settings = get_settings()
     async with httpx.AsyncClient(timeout=10) as c:
         r = await c.get(settings.clerk_jwks_url)
     r.raise_for_status()
+    _jwks_cache.clear()
     _jwks_cache.update(r.json())
+    _jwks_fetched_at = time.monotonic()
     return _jwks_cache
 
 

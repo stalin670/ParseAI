@@ -40,7 +40,8 @@ export async function streamChat(opts: {
       } catch {
         // ignore malformed source frame
       }
-    } else if (event === "done") opts.onDone();
+    } else if (event === "error") opts.onError(new Error(data || "stream error"));
+    else if (event === "done") opts.onDone();
     event = "message";
     dataLines = [];
   };

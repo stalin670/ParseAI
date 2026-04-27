@@ -1,8 +1,11 @@
 import json
+import logging
 from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse
+
+logger = logging.getLogger(__name__)
 
 from app.auth import current_user_persisted
 from app.config import get_settings
@@ -103,12 +106,19 @@ async def chat(
                 body.question,
             )
         full: list[str] = []
+        error_msg: str | None = None
         try:
             for token in stream_answer(prompt):
                 full.append(token)
                 yield {"event": "token", "data": token}
+            if not full:
+                # Gemini returned no content (safety block, empty completion).
+                error_msg = "Model returned no content"
+        except Exception as e:  # noqa: BLE001 — propagate cause to client
+            logger.exception("chat stream failed for doc=%s", doc_id)
+            error_msg = f"{type(e).__name__}: {e}"
         finally:
-            assistant_text = "".join(full) or "[interrupted]"
+            assistant_text = "".join(full) or f"[error: {error_msg}]"
             sources = [{"page": c["page"], "score": c["score"]} for c in chunks]
             async with pool.acquire() as conn:
                 await conn.execute(
@@ -117,6 +127,8 @@ async def chat(
                     doc_id,
                     assistant_text,
                 )
+            if error_msg:
+                yield {"event": "error", "data": error_msg}
             yield {"event": "sources", "data": json.dumps(sources)}
             yield {"event": "done", "data": ""}
 

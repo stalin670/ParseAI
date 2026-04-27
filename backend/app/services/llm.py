@@ -1,8 +1,21 @@
 from collections.abc import Iterator
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import (
+    ChatGoogleGenerativeAI,
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
 from app.config import get_settings
+
+# Permissive safety settings: PDFs are user-owned; spurious blocks here
+# surface as empty completions and were the cause of "[interrupted]" replies.
+_SAFETY_SETTINGS = {
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+}
 
 SYSTEM_INSTRUCTIONS = (
     "You answer questions using only this context from a PDF. "
@@ -26,6 +39,7 @@ def stream_answer(prompt: str) -> Iterator[str]:
         model="gemini-2.5-flash",
         google_api_key=s.gemini_api_key,
         temperature=0.2,
+        safety_settings=_SAFETY_SETTINGS,
     )
     for chunk in chat.stream(prompt):
         text = getattr(chunk, "content", "") or ""
