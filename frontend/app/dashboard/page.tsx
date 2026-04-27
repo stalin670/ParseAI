@@ -38,7 +38,11 @@ export default function DashboardPage() {
   const del = useMutation({
     mutationFn: (id: string) =>
       apiFetch(`/docs/${id}`, { method: "DELETE", tokenGetter }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["docs"] }),
+    onSuccess: async () => {
+      // brief delay so the row's exit transition can play before refetch
+      await new Promise((r) => setTimeout(r, 200));
+      qc.invalidateQueries({ queryKey: ["docs"] });
+    },
   });
 
   return (
@@ -89,7 +93,11 @@ export default function DashboardPage() {
             {(docsQ.error as Error).message}
           </p>
         ) : (
-          <DocList docs={docsQ.data ?? []} onDelete={(id) => del.mutate(id)} />
+          <DocList
+            docs={docsQ.data ?? []}
+            onDelete={(id) => del.mutate(id)}
+            deletingId={del.isPending ? (del.variables as string) : null}
+          />
         )}
       </section>
     </main>

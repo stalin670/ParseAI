@@ -27,10 +27,15 @@ describe("DocList", () => {
     expect(screen.getByText("beta.pdf")).toBeInTheDocument();
   });
 
-  it("calls onDelete when delete clicked", async () => {
+  it("calls onDelete after confirming the dialog", async () => {
     const onDelete = vi.fn();
     render(<DocList docs={docs} onDelete={onDelete} />);
+    // First click opens the confirm dialog.
     await userEvent.click(screen.getAllByRole("button", { name: /delete/i })[0]);
+    // Confirm button inside the dialog has accessible name "Delete".
+    const confirms = screen.getAllByRole("button", { name: /delete/i });
+    // The second one is the dialog's confirm button.
+    await userEvent.click(confirms[confirms.length - 1]);
     expect(onDelete).toHaveBeenCalledWith("1");
   });
 

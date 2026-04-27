@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Show, UserButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppHeader() {
   return (
@@ -15,24 +16,28 @@ export default function AppHeader() {
           </span>
           ParseWithAI
         </Link>
-        <Show when="signed-in">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-sm text-foreground/70 hover:text-foreground">
+        <div className="flex items-center gap-3">
+          <Show when="signed-in">
+            <Link
+              href="/dashboard"
+              className="text-sm text-foreground/70 hover:text-foreground"
+            >
               Dashboard
             </Link>
+          </Show>
+          <ThemeToggle />
+          <Show when="signed-in">
             <UserButton afterSignOutUrl="/" />
-          </div>
-        </Show>
-        <Show when="signed-out">
-          <div className="flex items-center gap-2">
+          </Show>
+          <Show when="signed-out">
             <Button asChild variant="ghost" size="sm">
               <Link href="/sign-in">Sign in</Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/sign-up">Sign up</Link>
             </Button>
-          </div>
-        </Show>
+          </Show>
+        </div>
       </div>
     </header>
   );
