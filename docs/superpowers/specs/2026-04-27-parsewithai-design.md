@@ -257,7 +257,7 @@ Targets: ~70% coverage on backend.
 
 External APIs (Gemini, Pinecone) mocked with `respx` / `pytest-httpx` to avoid burning quota in CI.
 
-Test DB: SQLite in-memory for unit/integration; optional Supabase local Docker for full-fidelity runs.
+Test DB: Postgres via `testcontainers-python` (spins up a disposable Postgres container per test session). SQLite is not used because the schema relies on `UUID`, `gen_random_uuid()`, and `TIMESTAMPTZ`. Pure unit tests that need no DB skip this.
 
 ### 6.2 Frontend (Vitest + React Testing Library)
 
