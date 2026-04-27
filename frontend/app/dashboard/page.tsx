@@ -8,6 +8,7 @@ import type { Document, UploadResult } from "@/lib/types";
 import DocList from "@/components/DocList";
 import UndoToast from "@/components/UndoToast";
 import UploadDropzone from "@/components/UploadDropzone";
+import UploadProgress from "@/components/UploadProgress";
 
 const UNDO_WINDOW_MS = 5000;
 
@@ -98,25 +99,37 @@ export default function DashboardPage() {
     del.mutate(doc.id);
   }, [del]);
 
+  // useMutation returns a fresh object each render, so capture the latest
+  // mutate via a ref — otherwise the unmount cleanup below would fire on
+  // every render and commit the delete before the undo window elapses.
+  const delMutateRef = useRef(del.mutate);
+  useEffect(() => {
+    delMutateRef.current = del.mutate;
+  }, [del]);
+
   // Commit the pending delete if the user navigates away. Treat nav-away
   // as confirmation (matches Gmail/iOS undo-toast pattern).
   useEffect(() => {
     return () => {
       const doc = undoRef.current;
-      if (doc) del.mutate(doc.id);
+      if (doc) delMutateRef.current(doc.id);
     };
-  }, [del]);
+  }, []);
 
   const [search, setSearch] = useState("");
 
+  // While the undo toast is open the doc is "soft-deleted" from the user's
+  // perspective. Hide it even if a concurrent refetch (e.g. an upload's
+  // invalidate) re-adds it to the cache — otherwise the row reappears
+  // under the still-visible toast.
   const visibleDocs = useMemo(() => {
-    const all = docsQ.data ?? [];
+    const all = (docsQ.data ?? []).filter((d) => d.id !== undoDoc?.id);
     const q = search.trim().toLowerCase();
     if (!q) return all;
     return all.filter((d) => d.filename.toLowerCase().includes(q));
-  }, [docsQ.data, search]);
+  }, [docsQ.data, search, undoDoc]);
 
-  const total = docsQ.data?.length ?? 0;
+  const total = (docsQ.data?.length ?? 0) - (undoDoc ? 1 : 0);
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 overflow-y-auto px-4 py-8">
@@ -132,17 +145,12 @@ export default function DashboardPage() {
           questions with page-level citations.
         </p>
         <div className="mt-6">
-          <UploadDropzone
-            onUpload={(f) => upload.mutate(f)}
-            disabled={upload.isPending}
-          />
+          {upload.isPending && upload.variables ? (
+            <UploadProgress file={upload.variables} />
+          ) : (
+            <UploadDropzone onUpload={(f) => upload.mutate(f)} />
+          )}
         </div>
-        {upload.isPending && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-foreground/70">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-foreground/60" />
-            Uploading and indexing… first PDF can take ~10–20s.
-          </div>
-        )}
         {upload.isError && (
           <p className="mt-3 text-sm text-red-500">
             {(upload.error as Error).message}
