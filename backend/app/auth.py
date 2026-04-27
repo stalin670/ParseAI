@@ -1,7 +1,7 @@
 from typing import Any
 
 import httpx
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 
 from app.config import get_settings
@@ -52,3 +52,11 @@ async def current_user_id(request: Request) -> str:
     if not sub:
         raise HTTPException(status_code=401, detail="Token missing sub")
     return str(sub)
+
+
+async def current_user_persisted(uid: str = Depends(current_user_id)) -> str:
+    """Auth + lazy-create the user row in Postgres. Use in routes that touch DB."""
+    from app.services.users import ensure_user_exists
+
+    await ensure_user_exists(uid)
+    return uid
