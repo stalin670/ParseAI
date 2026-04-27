@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <main className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+    <main className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-16 text-center">
       <span className="rounded-full border border-foreground/10 bg-foreground/5 px-3 py-1 text-xs uppercase tracking-widest text-foreground/65">
         RAG · Gemini · Pinecone
       </span>

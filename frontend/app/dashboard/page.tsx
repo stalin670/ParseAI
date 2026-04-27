@@ -42,7 +42,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 px-4 py-8">
+    <main className="mx-auto w-full max-w-5xl flex-1 space-y-8 overflow-y-auto px-4 py-8">
       <section className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-foreground/[0.04] to-transparent p-6 sm:p-8">
         <p className="text-xs uppercase tracking-widest text-foreground/50">
           ParseWithAI

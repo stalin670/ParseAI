@@ -38,9 +38,7 @@ export default function ChatPage() {
   }, [historyQ.data]);
 
   useEffect(() => {
-    if (docQ.error) {
-      router.push("/dashboard");
-    }
+    if (docQ.error) router.push("/dashboard");
   }, [docQ.error, router]);
 
   const handleSend = async (text: string) => {
@@ -82,7 +80,7 @@ export default function ChatPage() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-3 px-4 pt-4 pb-6 min-h-0">
       <div className="flex items-center justify-between">
         <Link
           href="/dashboard"

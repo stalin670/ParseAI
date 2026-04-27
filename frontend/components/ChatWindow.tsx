@@ -31,8 +31,8 @@ export default function ChatWindow({
   }, [messages, streaming]);
 
   return (
-    <div className="flex h-[calc(100vh-9rem)] flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.02]">
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+    <div className="flex flex-1 min-h-0 flex-col gap-3 rounded-2xl border border-foreground/10 bg-foreground/[0.02]">
+      <div ref={scrollRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
           <p className="mt-10 text-center text-sm text-foreground/55">
             Ask a question about this document to start.
