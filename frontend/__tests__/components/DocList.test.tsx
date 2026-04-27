@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DocList from "@/components/DocList";
 
@@ -27,16 +27,15 @@ describe("DocList", () => {
     expect(screen.getByText("beta.pdf")).toBeInTheDocument();
   });
 
-  it("calls onDelete after confirming the dialog", async () => {
+  it("calls onDelete with the doc after the exit transition completes", async () => {
     const onDelete = vi.fn();
     render(<DocList docs={docs} onDelete={onDelete} />);
-    // First click opens the confirm dialog.
     await userEvent.click(screen.getAllByRole("button", { name: /delete/i })[0]);
-    // Confirm button inside the dialog has accessible name "Delete".
-    const confirms = screen.getAllByRole("button", { name: /delete/i });
-    // The second one is the dialog's confirm button.
-    await userEvent.click(confirms[confirms.length - 1]);
-    expect(onDelete).toHaveBeenCalledWith("1");
+    expect(onDelete).not.toHaveBeenCalled();
+
+    const row = screen.getByText("alpha.pdf").closest("li")!;
+    fireEvent.transitionEnd(row, { propertyName: "grid-template-rows" });
+    expect(onDelete).toHaveBeenCalledWith(docs[0]);
   });
 
   it("renders empty state when no docs", () => {
