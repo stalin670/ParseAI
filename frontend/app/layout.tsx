@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import QueryProvider from "@/components/QueryProvider";
+import AppHeader from "@/components/AppHeader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -31,7 +32,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col bg-background text-foreground">
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <AppHeader />
+            {children}
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>

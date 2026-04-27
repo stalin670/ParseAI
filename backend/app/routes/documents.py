@@ -116,6 +116,59 @@ async def list_docs(
     ]
 
 
+@router.get("/{doc_id}", response_model=DocumentOut)
+async def get_doc(
+    doc_id: str,
+    user_id: str = Depends(current_user_persisted),
+) -> DocumentOut:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT id::text, filename, page_count, chunk_count, created_at "
+            "FROM documents WHERE id=$1::uuid AND clerk_user_id=$2",
+            doc_id,
+            user_id,
+        )
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    return DocumentOut(
+        id=row["id"],
+        filename=row["filename"],
+        page_count=row["page_count"],
+        chunk_count=row["chunk_count"],
+        created_at=row["created_at"].isoformat(),
+    )
+
+
+@router.get("/{doc_id}/chats")
+async def get_chats(
+    doc_id: str,
+    user_id: str = Depends(current_user_persisted),
+) -> list[dict]:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        owned = await conn.fetchval(
+            "SELECT 1 FROM documents WHERE id=$1::uuid AND clerk_user_id=$2",
+            doc_id,
+            user_id,
+        )
+        if not owned:
+            raise HTTPException(status_code=404, detail="Not found")
+        rows = await conn.fetch(
+            "SELECT role, content, created_at FROM chats "
+            "WHERE document_id=$1::uuid ORDER BY created_at ASC",
+            doc_id,
+        )
+    return [
+        {
+            "role": r["role"],
+            "content": r["content"],
+            "created_at": r["created_at"].isoformat(),
+        }
+        for r in rows
+    ]
+
+
 @router.delete("/{doc_id}", status_code=204)
 async def delete_doc(
     doc_id: str,

@@ -14,6 +14,7 @@ export async function streamChat(opts: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Accept: "text/event-stream",
       ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
     },
     body: JSON.stringify({ question: opts.question }),
@@ -22,26 +23,58 @@ export async function streamChat(opts: {
     opts.onError(new Error(`HTTP ${res.status}`));
     return;
   }
+
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
-    const events = buf.split("\n\n");
-    buf = events.pop() ?? "";
-    for (const ev of events) {
-      const lines = ev.split("\n");
-      let event = "message";
-      let data = "";
-      for (const ln of lines) {
-        if (ln.startsWith("event: ")) event = ln.slice(7).trim();
-        else if (ln.startsWith("data: ")) data += ln.slice(6);
+  let event = "message";
+  let dataLines: string[] = [];
+
+  const dispatch = () => {
+    if (dataLines.length === 0 && event === "message") return;
+    const data = dataLines.join("\n");
+    if (event === "token") opts.onToken(data);
+    else if (event === "sources") {
+      try {
+        opts.onSources(JSON.parse(data));
+      } catch {
+        // ignore malformed source frame
       }
-      if (event === "token") opts.onToken(data);
-      else if (event === "sources") opts.onSources(JSON.parse(data));
-      else if (event === "done") opts.onDone();
+    } else if (event === "done") opts.onDone();
+    event = "message";
+    dataLines = [];
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      // Normalise to LF-only line endings, then process one line at a time.
+      let nl = -1;
+      while ((nl = buf.search(/\r\n|\r|\n/)) !== -1) {
+        const line = buf.slice(0, nl);
+        const sepLen = buf[nl] === "\r" && buf[nl + 1] === "\n" ? 2 : 1;
+        buf = buf.slice(nl + sepLen);
+
+        if (line === "") {
+          dispatch();
+          continue;
+        }
+        if (line.startsWith(":")) continue; // SSE comment / keepalive
+        const colon = line.indexOf(":");
+        const field = colon === -1 ? line : line.slice(0, colon);
+        let value =
+          colon === -1 ? "" : line.slice(colon + 1).replace(/^ /, "");
+
+        if (field === "event") event = value || "message";
+        else if (field === "data") dataLines.push(value);
+      }
     }
+    // flush trailing event without terminating blank line
+    dispatch();
+  } catch (e) {
+    opts.onError(e as Error);
   }
 }
