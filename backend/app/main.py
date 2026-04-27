@@ -6,7 +6,9 @@ from app.config import get_settings
 
 def build_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="ParseWithAI API")
+    # docs_url=None: our router uses prefix /docs, which would otherwise
+    # collide with FastAPI's auto Swagger UI page.
+    app = FastAPI(title="ParseWithAI API", docs_url=None, redoc_url=None)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
