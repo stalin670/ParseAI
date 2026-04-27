@@ -8,7 +8,7 @@ class Embedder:
     def __init__(self) -> None:
         s = get_settings()
         self._client = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             google_api_key=s.gemini_api_key,
         )
 
